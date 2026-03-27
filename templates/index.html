@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CropGuard AI — Plant Disease Detection</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,600;0,9..144,800;1,9..144,300&family=Instrument+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/static/css/style.css"/>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════════
+     LOADING SCREEN
+══════════════════════════════════════════════════════════ -->
+<div id="loading-screen">
+  <div class="loader-content">
+    <div class="loader-emblem">
+      <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="50" cy="50" r="44" stroke="currentColor" stroke-width="1" opacity="0.2"/>
+        <path class="leaf-draw" d="M50 15 C68 15 82 30 82 50 C82 68 68 82 50 84 C32 82 18 68 18 50 C18 30 32 15 50 15Z" fill="currentColor" opacity="0.08"/>
+        <path class="leaf-draw" d="M50 84 L50 15" stroke="currentColor" stroke-width="1.5" stroke-dasharray="5 4"/>
+        <path class="leaf-draw" d="M50 42 C60 37 72 35 80 40" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <path class="leaf-draw" d="M50 54 C60 49 74 50 82 47" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <path class="leaf-draw" d="M50 42 C40 37 28 35 20 40" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <path class="leaf-draw" d="M50 54 C40 49 26 50 18 47" stroke="currentColor" stroke-width="1.2" stroke-dasharray="4 4"/>
+        <circle class="scan-dot" cx="50" cy="15" r="3.5" fill="currentColor"/>
+      </svg>
+    </div>
+    <div class="loader-wordmark">CropGuard<span>AI</span></div>
+    <p class="loader-sub" data-key="loading_text">Initializing models…</p>
+    <div class="loader-track"><div class="loader-fill"></div></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════════
+     APP SHELL
+══════════════════════════════════════════════════════════ -->
+<div id="app" class="hidden">
+
+  <!-- ── Header ── -->
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <svg class="logo-mark" viewBox="0 0 36 36" fill="none">
+          <path d="M18 4C25 4 31 10 31 18C31 25 25 31 18 32C11 31 5 25 5 18C5 10 11 4 18 4Z" fill="currentColor" opacity="0.15"/>
+          <path d="M18 32L18 4" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M18 16C22 14 27 13 31 16" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M18 22C22 20 28 20 31 18" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M18 16C14 14 9 13 5 16" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M18 22C14 20 8 20 5 18" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+        <span class="logo-name">CropGuard <em>AI</em></span>
+      </div>
+      <button id="lang-toggle" class="lang-pill" aria-label="Toggle language">
+        <span id="lang-label">हिं</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- ══════════════════════════════════════════════════════
+       VIEW: UPLOAD
+  ══════════════════════════════════════════════════════ -->
+  <main id="view-upload" class="view active">
+    <div class="scene-bg">
+      <div class="scene-blob blob-a"></div>
+      <div class="scene-blob blob-b"></div>
+      <div class="scene-lines"></div>
+    </div>
+
+    <div class="upload-shell">
+      <div class="upload-copy">
+        <span class="eyebrow">🌿 AI-Powered Plant Analysis</span>
+        <h1 data-key="upload_title">Analyze<br><em>Your Crop</em></h1>
+        <p data-key="upload_desc">Upload a clear photo of the affected leaf for instant AI-powered diagnosis</p>
+        <div class="crop-tags">
+          <span>🍠 Potato</span>
+          <span>🍅 Tomato</span>
+          <span>🍓 Strawberry</span>
+          <span>🍇 Grape</span>
+          <span>🍌 Banana</span>
+          <span>🥭 Mango</span>
+        </div>
+      </div>
+
+      <div class="upload-panel">
+        <!-- Drop Zone -->
+        <div class="drop-zone" id="drop-zone">
+          <div class="preview-wrap" id="preview-wrap" style="display:none">
+            <img id="preview-img" src="" alt="Preview"/>
+            <button class="remove-btn" id="remove-preview" title="Remove">✕</button>
+          </div>
+          <div class="drop-placeholder" id="upload-placeholder">
+            <div class="drop-icon">
+              <svg viewBox="0 0 56 56" fill="none">
+                <circle cx="28" cy="28" r="24" fill="currentColor" opacity="0.06"/>
+                <path d="M28 36 L28 20" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                <path d="M20 27 L28 19 L36 27" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                <path d="M18 40 L38 40" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.35"/>
+              </svg>
+            </div>
+            <p class="drop-hint" data-key="drag_drop">Drop image here</p>
+          </div>
+          <input type="file" id="file-input" accept="image/*" style="display:none"/>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-strip">
+          <button class="act-btn act-secondary" id="btn-upload">
+            <svg viewBox="0 0 20 20" fill="none"><path d="M3 14 L3 17 L17 17 L17 14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10 13 L10 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 8 L10 4 L14 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span data-key="upload_btn">Upload</span>
+          </button>
+          <button class="act-btn act-secondary" id="btn-camera">
+            <svg viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/><circle cx="10" cy="12" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M7 5 L8.5 2.5 L11.5 2.5 L13 5" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+            <span data-key="camera_btn">Camera</span>
+          </button>
+          <button class="act-btn act-primary" id="btn-analyze" disabled>
+            <span data-key="analyze_btn">Analyze Plant</span>
+            <svg viewBox="0 0 20 20" fill="none"><path d="M5 10 L13 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M10 7 L13 10 L10 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Camera Panel -->
+    <div id="camera-panel" class="camera-overlay hidden">
+      <div class="camera-modal">
+        <div class="camera-bar">
+          <span>📷 Camera</span>
+          <button id="camera-close" class="close-btn">✕</button>
+        </div>
+        <div class="camera-view">
+          <video id="camera-video" autoplay playsinline></video>
+          <canvas id="camera-canvas" style="display:none"></canvas>
+        </div>
+        <div class="camera-actions">
+          <button class="act-btn act-primary" id="btn-capture" data-key="capture_btn">Capture</button>
+          <button class="act-btn act-secondary hidden" id="btn-retake" data-key="retake_btn">Retake</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════
+       VIEW: ANALYZING
+  ══════════════════════════════════════════════════════ -->
+  <main id="view-analyzing" class="view">
+    <div class="spinner-scene">
+      <div class="spin-ring r1"></div>
+      <div class="spin-ring r2"></div>
+      <div class="spin-ring r3"></div>
+      <div class="spin-leaf">
+        <svg viewBox="0 0 60 60" fill="none">
+          <path d="M30 8C40 8 50 16 50 30C50 42 40 50 30 51C20 50 10 42 10 30C10 16 20 8 30 8Z" fill="currentColor" opacity="0.1"/>
+          <path d="M30 51L30 8" stroke="currentColor" stroke-width="1.5"/>
+          <path d="M30 24C35 22 41 21 48 24" stroke="currentColor" stroke-width="1.2"/>
+          <path d="M30 33C35 31 43 32 50 30" stroke="currentColor" stroke-width="1.2"/>
+        </svg>
+      </div>
+      <p class="spin-label" data-key="analyzing">Analyzing…</p>
+      <div class="spin-dots"><span></span><span></span><span></span></div>
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════
+       VIEW: RESULT
+  ══════════════════════════════════════════════════════ -->
+  <main id="view-result" class="view">
+    <div class="result-wrap">
+      <button class="ghost-back" id="btn-back">
+        <svg viewBox="0 0 18 18" fill="none"><path d="M13 9 L5 9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M9 5 L5 9 L9 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span data-key="back_btn">New Analysis</span>
+      </button>
+
+      <div class="result-grid">
+        <!-- Left -->
+        <aside class="result-aside">
+          <div class="result-photo">
+            <img id="result-img" src="" alt="Analyzed leaf"/>
+            <div class="photo-vignette"></div>
+          </div>
+          <div class="crop-card">
+            <div class="crop-card-col">
+              <span class="micro-label" data-key="crop_label">Detected Crop</span>
+              <span class="crop-name" id="res-crop">—</span>
+            </div>
+            <div class="crop-card-divider"></div>
+            <div class="crop-card-col">
+              <span class="micro-label" data-key="confidence">Confidence</span>
+              <div class="conf-row">
+                <div class="conf-bar"><div class="conf-fill" id="confidence-fill"></div></div>
+                <span class="conf-pct" id="confidence-pct">—</span>
+              </div>
+            </div>
+          </div>
+        </aside>
+
+        <!-- Right -->
+        <section class="result-main">
+          <div class="diagnosis-header">
+            <div id="severity-badge" class="sev-badge">—</div>
+            <h2 id="res-disease">—</h2>
+            <p class="diag-conf"><span data-key="confidence">Confidence</span>: <strong id="res-disease-conf">—</strong></p>
+          </div>
+
+          <div class="detail-stack">
+            <div class="detail-block">
+              <div class="detail-icon">🔍</div>
+              <div class="detail-body">
+                <p class="detail-label" data-key="symptoms_label">Symptoms</p>
+                <p id="res-symptoms">—</p>
+              </div>
+            </div>
+            <div class="detail-block">
+              <div class="detail-icon">🧬</div>
+              <div class="detail-body">
+                <p class="detail-label" data-key="causes_label">Causes</p>
+                <p id="res-causes">—</p>
+              </div>
+            </div>
+            <div class="detail-block detail-cta">
+              <div class="detail-icon">💊</div>
+              <div class="detail-body">
+                <p class="detail-label" data-key="recommendation_label">Recommendation</p>
+                <p id="res-recommendation">—</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="disclaimer-strip">
+            <span data-key="disclaimer">⚠️ For educational purposes only. Not professional agricultural advice.</span>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════
+       VIEW: UNSUPPORTED
+  ══════════════════════════════════════════════════════ -->
+  <main id="view-unsupported" class="view">
+    <div class="state-card">
+      <div class="state-icon unsupported-emoji">🌾</div>
+      <h2 data-key="unsupported_title">Crop Not Supported</h2>
+      <p id="res-unsupported-crop" class="state-sub"></p>
+      <p data-key="unsupported_msg" class="state-body">This crop is not in our database yet.</p>
+      <div class="chip-row">
+        <span>🍠 Potato</span><span>🍅 Tomato</span><span>🍓 Strawberry</span>
+        <span>🍇 Grape</span><span>🍌 Banana</span><span>🥭 Mango</span>
+      </div>
+      <button class="act-btn act-primary mt-lg" id="btn-back-2" data-key="back_btn">← New Analysis</button>
+    </div>
+  </main>
+
+  <!-- ══════════════════════════════════════════════════════
+       VIEW: ERROR  (new — replaces silent toast-only errors)
+  ══════════════════════════════════════════════════════ -->
+  <main id="view-error" class="view">
+    <div class="state-card error-card">
+      <img id="error-img" src="" alt="" style="display:none" class="error-thumb"/>
+      <div class="error-pulse">
+        <svg viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="28" stroke="currentColor" stroke-width="1.5" opacity="0.3"/>
+          <path d="M32 20 L32 36" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+          <circle cx="32" cy="44" r="2" fill="currentColor"/>
+        </svg>
+      </div>
+      <h2 class="error-title">Analysis Failed</h2>
+      <p id="error-message" class="error-msg">An unexpected error occurred.</p>
+      <p id="error-tip" class="error-tip"></p>
+      <div class="error-actions">
+        <button class="act-btn act-primary" id="btn-back-error">← Try Again</button>
+      </div>
+      <details class="debug-section">
+        <summary>What could cause this?</summary>
+        <ul>
+          <li>The AI model file (.keras) is missing from the <code>models/</code> directory</li>
+          <li>The disease class list order in <code>ml_pipeline.py</code> doesn't match what the model was trained on</li>
+          <li>The crop classifier output label doesn't match a key in <code>SUPPORTED_CROPS</code></li>
+          <li>The image is too blurry, too dark, or doesn't show a leaf clearly</li>
+          <li>The Flask server returned an HTTP error (check server logs)</li>
+        </ul>
+      </details>
+    </div>
+  </main>
+
+</div><!-- /app -->
+
+<script src="/static/js/app.js"></script>
+</body>
+</html>
