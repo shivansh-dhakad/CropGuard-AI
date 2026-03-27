@@ -91,12 +91,12 @@ def model_make(path):
     
  
 if __name__=='__main__':
-    potato="C:/Users/shiva/Desktop/crop classification and disease detection/crop disease classification/potato"
-    tomato="C:/Users/shiva/Desktop/crop classification and disease detection/crop disease classification/tomato"
-    banana="C:/Users/shiva/Desktop/crop classification and disease detection/crop disease classification/banana"
-    grapes="C:/Users/shiva/Desktop/crop classification and disease detection/crop disease classification/grapes"
-    strawberry="C:/Users/shiva/Desktop/crop classification and disease detection/crop disease classification/strawberry"
-    mango="C:/Users/shiva/Desktop/crop classification and disease detection/crop disease classification/mango"
+    potato="dataSet_path"
+    tomato="dataSet_path"
+    banana="dataSet_path"
+    grapes="dataSet_path"
+    strawberry="dataSet_path"
+    mango="dataSet_path"
     
     crops=[potato,tomato,banana,grapes,strawberry,mango]
     for i in crops:
