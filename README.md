@@ -1,6 +1,6 @@
 # 🌿 CropGuard AI — Plant Disease Detection System
 
-A production-ready Flask web app for detecting crop diseases using a two-stage deep learning pipeline.
+A production-ready Flask web app for detecting crop diseases using a two-stage deep learning pipeline. Upload a leaf image → the system identifies the crop → then diagnoses the disease — with full results available in both English and Hindi.
 
 ---
 
@@ -8,16 +8,23 @@ A production-ready Flask web app for detecting crop diseases using a two-stage d
 
 ```
 project/
-├── app.py                     # Flask app (Phases 1–5, API)
+├── app.py                     # Flask app — routes, API, startup
 ├── requirements.txt
-├── models/                    # Place your .keras models here
+├── models/                    # All trained model files go here
 │   ├── crop_classification.keras
+│   ├── crop_classification.json
 │   ├── potato.keras
+│   ├── potato.json
 │   ├── tomato.keras
+│   ├── tomato.json
 │   ├── strawberry.keras
+│   ├── strawberry.json
 │   ├── grapes.keras
+│   ├── grapes.json
 │   ├── banana.keras
-│   └── mango.keras
+│   ├── banana.json
+│   ├── mango.keras
+│   └── mango.json
 ├── static/
 │   ├── css/style.css          # Full production UI styles
 │   └── js/app.js              # All client-side logic
@@ -25,8 +32,8 @@ project/
 │   └── index.html             # Single-page app template
 └── utils/
     ├── __init__.py
-    ├── ml_pipeline.py         # Model loading, caching, prediction
-    └── disease_data.py        # Disease info DB + translations
+    ├── ml_pipeline.py         # Model loading, caching, prediction pipeline
+    └── disease_data.py        # Disease info database + EN/Hindi translations
 ```
 
 ---
@@ -39,24 +46,44 @@ project/
 pip install -r requirements.txt
 ```
 
-### 2. Place model files
+### 2. Prepare the datasets
 
-Copy all `.keras` model files into the `models/` directory:
+Download the datasets for all 6 crops and store them on your device. Each crop folder should contain subfolders per disease class.
+
+### 3. Train the models
+
+Run the two training files in order:
+
+```bash
+# Step 1 — Train the crop classifier (identifies which crop it is)
+# Open and run: crop_classification.ipynb
+
+# Step 2 — Train all 6 disease classifiers (one per crop)
+python crop_disease_classification.py
+```
+
+This will generate the `.keras` model files. Copy all of them along with their corresponding `.json` files into the `models/` directory:
 
 ```
-models/crop_classification.keras   ← from crop_classification.ipynb output
-models/potato.keras                ← from crop_disease_classification.py output
+models/crop_classification.keras   ← output of crop_classification.ipynb
+models/crop_classification.json
+models/potato.keras                ← output of crop_disease_classification.py
+models/potato.json
 models/tomato.keras
+models/tomato.json
 models/strawberry.keras
+models/strawberry.json
 models/grapes.keras
+models/grapes.json
 models/banana.keras
+models/banana.json
 models/mango.keras
+models/mango.json
 ```
 
-> **Note:** The app runs in **demo mode** if models are not present.
-> It will still show the full UI with mock predictions.
+> **Important:** The crop classifier must be named exactly `crop_classification.keras` (underscore, no spaces). If your notebook saved it as `crop classification.keras`, rename it before copying.
 
-### 3. Start the server
+### 4. Start the server
 
 ```bash
 cd project/
@@ -64,6 +91,32 @@ python app.py
 ```
 
 Open: http://localhost:5000
+
+On startup, check the console for this line to confirm all models loaded:
+
+```
+Crop classifier: ✅ | Disease models: ['potato', 'tomato', 'strawberry', 'grapes', 'banana', 'mango']
+```
+
+---
+
+## How It Works
+
+The system uses a two-stage pipeline:
+
+```
+Upload leaf image
+        ↓
+Stage 1 — Crop Classifier
+Identifies: Potato / Tomato / Strawberry / Grape / Banana / Mango
+        ↓
+Stage 2 — Disease Classifier (crop-specific model)
+Identifies the exact disease for that crop
+        ↓
+Result: Disease name, symptoms, causes, treatment recommendation, severity
+```
+
+Keeping the two stages separate means each disease model only focuses on its own crop, which improves accuracy compared to a single large model classifying everything at once.
 
 ---
 
@@ -81,7 +134,7 @@ image: <image file>  (PNG, JPG, JPEG, WEBP — max 16MB)
 { "image_b64": "data:image/jpeg;base64,..." }
 ```
 
-**Output:**
+**Output — supported crop:**
 ```json
 {
   "supported": true,
@@ -97,13 +150,18 @@ image: <image file>  (PNG, JPG, JPEG, WEBP — max 16MB)
 }
 ```
 
-**If unsupported crop:**
+**Output — unsupported crop:**
 ```json
 {
   "supported": false,
   "crop": "wheat",
   "crop_confidence": 88.2,
-  ...rest null
+  "disease": null,
+  "display_name": null,
+  "symptoms": null,
+  "causes": null,
+  "recommendation": null,
+  "severity": null
 }
 ```
 
@@ -119,77 +177,37 @@ image: <image file>  (PNG, JPG, JPEG, WEBP — max 16MB)
 
 ---
 
-## Phase Testing Checklist
-
-### ✅ Phase 1 — Project Setup & Basic Flask
-```bash
-python app.py
-# Expected: Server starts on port 5000, no errors
-curl http://localhost:5000/
-# Expected: 200 OK, HTML response
-```
-
-### ✅ Phase 2 — Image Upload API
-```bash
-# Test with curl
-curl -X POST http://localhost:5000/predict \
-  -F "image=@/path/to/test_leaf.jpg"
-# Expected: JSON with prediction or demo response
-```
-
-### ✅ Phase 3 — Crop Classifier
-```bash
-curl http://localhost:5000/health
-# Expected: crop_classifier: true (if model file exists)
-```
-
-### ✅ Phase 4 — Multi-Model Routing
-- Upload a tomato leaf → should load tomato disease model
-- Upload unsupported crop → `"supported": false` in response
-
-### ✅ Phase 5 — Disease Info Mapping
-```bash
-curl -X POST http://localhost:5000/predict -F "image=@tomato_leaf.jpg"
-# Expected: Full JSON with symptoms, causes, recommendation, severity
-```
-
-### ✅ Phase 6 — Frontend UI
-- Open http://localhost:5000
-- Upload image → result shows crop, disease, all info cards
-
-### ✅ Phase 7 — Camera Integration
-- Click "Use Camera" → browser asks for permission
-- Capture frame → preview shown → Analyze works
-
-### ✅ Phase 8 — Language Toggle
-- Click हिं button in header → all UI text switches to Hindi
-- Click EN → switches back → no layout breaks
-
-### ✅ Phase 9 — UX Enhancements
-- Loading screen appears on startup (2 seconds)
-- Back button returns to upload view
-- Smooth transitions between views
-
-### ✅ Phase 10 — Disclaimer
-- Visible on every result page (amber warning box)
-
----
-
 ## Model Class Name Expectations
 
-The ML pipeline uses these class name arrays (must match training order):
+The ML pipeline uses these class name arrays. **The order must match the training order exactly** (alphabetical by default when using `image_dataset_from_directory`).
 
 **Crop classifier:** `["banana", "grapes", "mango", "potato", "strawberry", "tomato"]`
 
 **Disease models:**
-- `potato`: `[Early_blight, Late_blight, healthy]`
-- `tomato`: `[Bacterial_spot, Early_blight, Late_blight, Leaf_Mold, Septoria_leaf_spot, Spider_mites, Target_Spot, Yellow_Leaf_Curl_Virus, mosaic_virus, healthy]`
-- `strawberry`: `[Leaf_scorch, healthy]`
-- `grapes`: `[Black_rot, Esca, Leaf_blight, healthy]`
-- `banana`: `[Cordana, Pestalotiopsis, Sigatoka, healthy]`
-- `mango`: `[Anthracnose, Die_Back, Powdery_Mildew, Sooty_Mould, healthy]`
 
-If your models have different class orders, update `_class_names` in `utils/ml_pipeline.py`.
+| Crop | Classes |
+|---|---|
+| `potato` | `Early_blight`, `Late_blight`, `healthy` |
+| `tomato` | `Bacterial_spot`, `Early_blight`, `Late_blight`, `Leaf_Mold`, `Septoria_leaf_spot`, `Spider_mites`, `Yellow_Leaf_Curl_Virus`, `mosaic_virus`, `healthy` |
+| `strawberry` | `Leaf_scorch`, `healthy` |
+| `grapes` | `Black_rot`, `Esca`, `Leaf_blight`, `healthy` |
+| `banana` | `Cordana`, `Pestalotiopsis`, `Sigatoka`, `healthy` |
+| `mango` | `Anthracnose`, `Bacterial_Canker`, `Gall_Midge`, `Powdery_Mildew`, `Sooty_Mould`, `healthy` |
+
+> If your dataset folders are in a different order, update the `_class_names` dictionary in `utils/ml_pipeline.py` to match.
+
+---
+
+## Features
+
+- **Two-stage AI pipeline** — crop classification followed by disease classification
+- **6 supported crops** — Potato, Tomato, Strawberry, Grape, Banana, Mango
+- **28 disease classes** across all crops including healthy states
+- **Detailed results** — symptoms, causes, treatment recommendation, severity level
+- **Hindi language support** — full UI and results switchable to Hindi with one click
+- **Camera support** — capture directly from device camera via WebRTC
+- **Drag & drop upload** — or click to browse
+- **No model reloading** — all models loaded once at startup and cached in memory
 
 ---
 
@@ -197,8 +215,8 @@ If your models have different class orders, update `_class_names` in `utils/ml_p
 
 | Concern | Solution |
 |---|---|
-| Model reload per request | `load_all_models()` called ONCE at startup, cached in module globals |
-| Camera images | Sent as `multipart/form-data` blob (same as file upload) |
-| Translation | JSON served via `/translations`, applied by `data-key` attributes |
-| Error handling | Try/catch at every level, `demo mode` if models missing |
-| Security | File extension validation, 16MB limit, no path traversal |
+| Model reload per request | `load_all_models()` called once at startup, cached in module globals |
+| Camera images | Sent as `multipart/form-data` blob — same path as file upload |
+| Language switching | Translation JSON served via `/translations`, applied via `data-key` attributes |
+| Error handling | Real errors raised and returned as JSON — no silent fallbacks or mock data |
+| Security | File extension validation, 16 MB size limit, no path traversal |
